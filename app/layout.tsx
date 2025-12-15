@@ -23,9 +23,9 @@ export const metadata: Metadata = {
   keywords: ["CAN 2025", "Africa Cup of Nations", "Morocco", "Football", "CAF", "AFCON"],
   authors: [{ name: "CAN 2025 Hub Team" }],
   icons: {
-    icon: "/images/can-logo.png",
-    shortcut: "/favicon.ico",
-    apple: "/apple-icon.png",
+    icon: "/images/can2025-logo.png",
+    shortcut: "/images/can2025-logo.png",
+    apple: "/images/can2025-logo.png",
   },
 }
 

@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Calendar, Ticket } from "lucide-react"
 import { CountdownCAN2025 } from "@/components/countdown/countdown-can2025"
+import Image from "next/image"
 
 export function HeroSection() {
   return (
@@ -77,14 +78,16 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Right content - Official logo */}
           <div className="relative flex justify-center lg:justify-end">
             <div className="relative">
               <div className="absolute -inset-4 bg-gradient-to-r from-secondary/20 to-accent/20 rounded-full blur-3xl" />
-              <img
-                src="/images/coupe-d-27afrique-des-nations-de-football-2025-logo.png"
+              <Image
+                src="/images/can2025-logo.png"
                 alt="Logo officiel CAN Morocco 2025"
+                width={400}
+                height={400}
                 className="relative w-full max-w-md lg:max-w-lg drop-shadow-2xl"
+                priority
               />
             </div>
           </div>

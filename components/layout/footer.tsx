@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { CANLogo } from "@/components/ui/can-logo"
 import { MapPin, Mail, Phone } from "lucide-react"
 
@@ -103,8 +104,13 @@ export function Footer() {
         <div className="mt-12 border-t border-primary-foreground/10 pt-8">
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
             <div className="flex items-center gap-4">
-              <img src="/images/flag-of-morocco.png" alt="Drapeau du Maroc" className="h-6 w-auto rounded" />
-              <img src="/images/zssboowalbcindtvgxdbvm6g4m.avif" alt="Logo CAN 2025" className="h-10 w-auto" />
+              <Image
+                src="/images/can2025-logo.png"
+                alt="Logo CAN 2025"
+                width={80}
+                height={40}
+                className="h-10 w-auto"
+              />
             </div>
             <div className="text-center md:text-right">
               <p className="text-sm text-primary-foreground/50">

@@ -15,7 +15,7 @@ const navigation = [
   { name: "Mascotte", href: "/mascotte", icon: Sparkles },
 ]
 
-const OFFICIAL_LOGO_URL = "/images/can-logo.png"
+const OFFICIAL_LOGO_URL = "/images/can2025-logo.png"
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)

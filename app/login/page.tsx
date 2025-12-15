@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { LoginForm } from "@/components/auth/login-form"
 import { CANLogo } from "@/components/ui/can-logo"
+import Image from "next/image"
 
 export const metadata: Metadata = {
   title: "Connexion | CAN Morocco 2025 Hub",
@@ -42,9 +43,11 @@ export default function LoginPage() {
       <div className="hidden lg:flex relative bg-primary moroccan-pattern">
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/95 to-primary/90" />
         <div className="relative z-10 flex flex-col justify-center items-center p-12 text-center">
-          <img
-            src="/images/coupe-d-27afrique-des-nations-de-football-2025-logo.png"
+          <Image
+            src="/images/can2025-logo.png"
             alt="CAN 2025 Logo"
+            width={256}
+            height={256}
             className="w-64 h-auto mb-8 drop-shadow-2xl"
           />
           <h2 className="text-4xl font-bold text-primary-foreground mb-4" style={{ fontFamily: "var(--font-bebas)" }}>

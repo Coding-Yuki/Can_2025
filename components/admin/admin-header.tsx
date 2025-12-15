@@ -13,13 +13,15 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { useSidebarContext } from "./admin-sidebar"
 
 export function AdminHeader() {
+  const { setIsOpen } = useSidebarContext()
+
   return (
     <header className="sticky top-0 z-40 bg-background border-b border-border">
       <div className="flex h-16 items-center gap-4 px-4 sm:px-6 lg:px-8">
-        {/* Mobile menu button */}
-        <Button variant="ghost" size="icon" className="lg:hidden">
+        <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setIsOpen(true)}>
           <Menu className="h-5 w-5" />
           <span className="sr-only">Ouvrir le menu</span>
         </Button>
@@ -59,7 +61,7 @@ export function AdminHeader() {
               </DropdownMenuItem>
               <DropdownMenuItem className="flex flex-col items-start gap-1 py-3">
                 <span className="font-medium">Mise a jour du calendrier</span>
-                <span className="text-sm text-muted-foreground">L'horaire du match Nigeria-Egypte a ete modifie</span>
+                <span className="text-sm text-muted-foreground">Horaire du match Nigeria-Egypte modifie</span>
                 <span className="text-xs text-muted-foreground">Il y a 3 heures</span>
               </DropdownMenuItem>
             </DropdownMenuContent>

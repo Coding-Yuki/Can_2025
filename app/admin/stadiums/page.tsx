@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Building2, MapPin, Users, Calendar, Edit, Eye } from "lucide-react"
+import Image from "next/image"
 
 const stadiums = [
   {
@@ -11,7 +12,7 @@ const stadiums = [
     capacity: 67000,
     matches: 8,
     status: "ready",
-    image: "/modern-football-stadium-casablanca.jpg",
+    image: "/images/stadium-casablanca.jpg",
   },
   {
     id: 2,
@@ -20,7 +21,7 @@ const stadiums = [
     capacity: 52000,
     matches: 10,
     status: "ready",
-    image: "/rabat-sports-complex-stadium.jpg",
+    image: "/images/stadium-rabat.jpg",
   },
   {
     id: 3,
@@ -29,7 +30,7 @@ const stadiums = [
     capacity: 45000,
     matches: 8,
     status: "ready",
-    image: "/marrakech-football-stadium.jpg",
+    image: "/images/stadium-marrakech.jpg",
   },
   {
     id: 4,
@@ -38,7 +39,7 @@ const stadiums = [
     capacity: 45000,
     matches: 8,
     status: "renovation",
-    image: "/tangier-grand-stadium.jpg",
+    image: "/images/stadium-tanger.jpg",
   },
   {
     id: 5,
@@ -47,7 +48,7 @@ const stadiums = [
     capacity: 45000,
     matches: 9,
     status: "ready",
-    image: "/fes-stadium-morocco.jpg",
+    image: "/images/stadium-fes.jpg",
   },
   {
     id: 6,
@@ -56,7 +57,7 @@ const stadiums = [
     capacity: 45000,
     matches: 9,
     status: "ready",
-    image: "/agadir-adrar-stadium.jpg",
+    image: "/images/stadium-agadir.jpg",
   },
 ]
 
@@ -121,10 +122,12 @@ export default function StadiumsPage() {
         {stadiums.map((stadium) => (
           <Card key={stadium.id} className="overflow-hidden">
             <div className="aspect-video relative">
-              <img
+              <Image
                 src={stadium.image || "/placeholder.svg"}
                 alt={stadium.name}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
               <Badge
                 className={`absolute top-3 right-3 ${
