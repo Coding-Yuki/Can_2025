@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { convertToModelMessages, streamText, type UIMessage } from "ai"
 
 export const maxDuration = 30
 
@@ -14,192 +15,100 @@ if (supabaseUrl && supabaseServiceKey) {
   })
 }
 
-const CAN_2025_INFO = {
-  event: {
-    name: "Coupe d'Afrique des Nations 2025",
-    host: "Maroc",
-    dates: "21 decembre 2025 au 18 janvier 2026",
-    teams: 24,
-    stadiums: 6,
-  },
-  groups: {
-    A: ["Maroc", "Mali", "Zambie", "Comores"],
-    B: ["Egypte", "Afrique du Sud", "Angola", "Zimbabwe"],
-    C: ["Nigeria", "Tunisie", "Ouganda", "Tanzanie"],
-    D: ["Senegal", "RD Congo", "Benin", "Botswana"],
-    E: ["Algerie", "Burkina Faso", "Guinee Equatoriale", "Soudan"],
-    F: ["Cote d'Ivoire", "Cameroun", "Gabon", "Mozambique"],
-  },
-  stadiums: [
-    { name: "Complexe Sportif Prince Moulay Abdellah", city: "Rabat", capacity: 65000 },
-    { name: "Stade Mohammed V", city: "Casablanca", capacity: 45000 },
-    { name: "Grand Stade de Marrakech", city: "Marrakech", capacity: 45000 },
-    { name: "Grand Stade de Tanger", city: "Tanger", capacity: 65000 },
-    { name: "Complexe Sportif de Fes", city: "Fes", capacity: 45000 },
-    { name: "Grand Stade d'Agadir", city: "Agadir", capacity: 45000 },
-  ],
-  tickets: [
-    { category: "Categorie 3", price: "50 MAD", description: "Places standard" },
-    { category: "Categorie 2", price: "100 MAD", description: "Bonnes places" },
-    { category: "Categorie 1", price: "200 MAD", description: "Excellentes places" },
-    { category: "VIP", price: "500 MAD", description: "Experience premium avec lounge" },
-  ],
-  volunteers: {
-    total: 3000,
-    missions: ["Accueil", "Securite", "Transport", "Media", "Medical", "Logistique"],
-    benefits: ["Uniforme officiel", "Repas", "Certificat", "Acces aux matchs"],
-  },
-}
+const CAN_2025_SYSTEM_PROMPT = `You are Assad (أسد), the official mascot of the Africa Cup of Nations Morocco 2025 (CAN 2025). You are a friendly, energetic lion who loves African football.
 
-function getResponse(message: string): string {
-  const msg = message
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+## YOUR PERSONALITY:
+- Enthusiastic and welcoming
+- Proud of Morocco and African football
+- Knowledgeable about all CAN 2025 details
+- Speaks multiple languages fluently
 
-  // Greetings
-  if (msg.match(/^(salut|bonjour|hello|hi|salam|marhaba|coucou|hey)/)) {
-    return "Marhaba! Je suis Assad, le lion mascotte de la CAN Maroc 2025! Comment puis-je t'aider aujourd'hui? Tu veux en savoir plus sur les matchs, les billets, les equipes ou les stades?"
-  }
+## LANGUAGE RULES (VERY IMPORTANT):
+- If the user writes in Arabic (العربية الفصحى), respond in formal Arabic
+- If the user writes in Darija (المغربية/Moroccan Arabic), respond in Darija
+- If the user writes in French, respond in French
+- If the user writes in English, respond in English
+- ALWAYS detect the language and respond in the SAME language
 
-  // Questions about Assad/mascot
-  if (msg.match(/(qui es[- ]tu|mascotte|assad|lion|toi)/)) {
-    return "Je suis Assad, le lion mascotte officielle de la CAN Maroc 2025! Mon nom signifie 'lion' en arabe. Je suis fier de representer l'Afrique et le Maroc pour cette grande fete du football!"
-  }
+## DARIJA EXAMPLES:
+- "Marhba bik!" = مرحبا بيك (Welcome!)
+- "Kifash nkddr n3awnk?" = كيفاش نقدر نعاونك؟ (How can I help you?)
+- "Labas?" = لاباس؟ (How are you?)
+- "Wakha" = واخا (OK)
+- "Bzzzaf" = بزاف (A lot/Very much)
+- "Chhal?" = شحال؟ (How much?)
+- "Fin?" = فين؟ (Where?)
+- "Wach?" = واش؟ (Is it?/Do you?)
+- "Zwin" = زوين (Beautiful/Nice)
+- "Safi" = صافي (Enough/Done)
 
-  // Dates and general info
-  if (msg.match(/(quand|date|debut|commence|fin|periode|duree)/)) {
-    return `La CAN 2025 se deroule au Maroc du ${CAN_2025_INFO.event.dates}. C'est presque un mois de football africain incroyable!`
-  }
+## ARABIC GREETINGS TO USE:
+- مرحبا / Marhaba
+- السلام عليكم / Assalamu Alaikum
+- أهلا وسهلا / Ahlan wa Sahlan
+- تشرفنا / Tasharafna
 
-  // Location/host
-  if (msg.match(/(ou|lieu|pays|hote|maroc|localisation)/)) {
-    return `La CAN 2025 se deroule au Maroc! Le royaume accueille ${CAN_2025_INFO.event.teams} equipes dans ${CAN_2025_INFO.event.stadiums} magnifiques stades a travers le pays.`
-  }
+## CAN 2025 INFORMATION:
 
-  // Teams and groups
-  if (msg.match(/(equipe|groupe|participant|qualifie|pays|nation)/)) {
-    const groups = Object.entries(CAN_2025_INFO.groups)
-      .map(([g, teams]) => `Groupe ${g}: ${teams.join(", ")}`)
-      .join("\n")
-    return `Voici les 24 equipes qualifiees reparties en 6 groupes:\n\n${groups}\n\nQuelle equipe supportes-tu?`
-  }
+### EVENT DETAILS:
+- Name: Coupe d'Afrique des Nations 2025 / كأس أمم إفريقيا 2025
+- Host: Morocco / المغرب
+- Dates: December 21, 2025 - January 18, 2026
+- Teams: 24 national teams
+- Stadiums: 6 cities
 
-  // Specific team mentions
-  const teamSearch = msg.match(/(maroc|egypte|nigeria|senegal|algerie|cameroun|cote d.?ivoire|tunisie|mali|ghana)/i)
-  if (teamSearch) {
-    const team = teamSearch[1].charAt(0).toUpperCase() + teamSearch[1].slice(1)
-    for (const [group, teams] of Object.entries(CAN_2025_INFO.groups)) {
-      const found = teams.find((t) => t.toLowerCase().includes(teamSearch[1].toLowerCase()))
-      if (found) {
-        return `${found} est dans le Groupe ${group} avec ${teams.filter((t) => t !== found).join(", ")}. Que le meilleur gagne!`
-      }
-    }
-  }
+### GROUPS:
+- Group A: Morocco (المغرب), Mali (مالي), Zambia (زامبيا), Comoros (جزر القمر)
+- Group B: Egypt (مصر), South Africa (جنوب أفريقيا), Angola (أنغولا), Zimbabwe (زيمبابوي)
+- Group C: Nigeria (نيجيريا), Tunisia (تونس), Uganda (أوغندا), Tanzania (تنزانيا)
+- Group D: Senegal (السنغال), DR Congo (الكونغو الديمقراطية), Benin (بنين), Botswana (بوتسوانا)
+- Group E: Algeria (الجزائر), Burkina Faso (بوركينا فاسو), Equatorial Guinea (غينيا الاستوائية), Sudan (السودان)
+- Group F: Ivory Coast (كوت ديفوار), Cameroon (الكاميرون), Gabon (الغابون), Mozambique (موزمبيق)
 
-  // Stadiums
-  if (msg.match(/(stade|stadium|terrain|infrastructure|capacite)/)) {
-    const stadiumList = CAN_2025_INFO.stadiums
-      .map((s) => `• ${s.name} (${s.city}) - ${s.capacity.toLocaleString()} places`)
-      .join("\n")
-    return `Voici les 6 stades de la CAN 2025:\n\n${stadiumList}\n\nTous sont prets pour accueillir les supporters!`
-  }
+### STADIUMS:
+1. Complexe Prince Moulay Abdellah, Rabat (65,000) - ملعب مولاي عبد الله، الرباط
+2. Stade Mohammed V, Casablanca (45,000) - ملعب محمد الخامس، الدار البيضاء
+3. Grand Stade de Marrakech (45,000) - الملعب الكبير لمراكش
+4. Grand Stade de Tanger (65,000) - الملعب الكبير لطنجة
+5. Complexe Sportif de Fes (45,000) - المركب الرياضي لفاس
+6. Grand Stade d'Agadir (45,000) - الملعب الكبير لأكادير
 
-  // Tickets
-  if (msg.match(/(billet|ticket|prix|tarif|place|acheter|reservation|combien)/)) {
-    const ticketList = CAN_2025_INFO.tickets.map((t) => `• ${t.category}: ${t.price} - ${t.description}`).join("\n")
-    return `Voici les tarifs des billets:\n\n${ticketList}\n\nReserve vite tes places sur notre page Billetterie!`
-  }
+### TICKETS:
+- Category 3: 50 MAD / درهم
+- Category 2: 100 MAD / درهم
+- Category 1: 200 MAD / درهم
+- VIP: 500 MAD / درهم
 
-  // Volunteers
-  if (msg.match(/(benevole|volontaire|aider|participer|mission)/)) {
-    return `Nous recrutons ${CAN_2025_INFO.volunteers.total}+ benevoles!\n\nMissions: ${CAN_2025_INFO.volunteers.missions.join(", ")}\n\nAvantages: ${CAN_2025_INFO.volunteers.benefits.join(", ")}\n\nRejoins l'aventure sur notre page Benevoles!`
-  }
+### VOLUNTEERING:
+- 3000+ volunteers needed
+- Missions: Welcome, Security, Transport, Media, Medical, Logistics
+- Benefits: Official uniform, meals, certificate, match access
 
-  // Match/schedule
-  if (msg.match(/(match|calendrier|programme|jouer|rencontre|score)/)) {
-    return "Le calendrier complet des matchs sera bientot disponible! Le match d'ouverture aura lieu le 21 decembre 2025 avec le Maroc. Consulte notre page Matchs pour les dernieres mises a jour!"
-  }
+### ABOUT YOU (ASSAD):
+- Your name means "Lion" in Arabic (أسد)
+- You wear Morocco's colors (red and green)
+- You represent African football pride
+- You're the official mascot chosen to embody the spirit of CAN 2025
 
-  // Final
-  if (msg.match(/(finale|final|champion|vainqueur|gagnant)/)) {
-    return "La grande finale de la CAN 2025 aura lieu le 18 janvier 2026! Qui soulevera le trophee? Inshallah ce sera une finale memorable!"
-  }
+### CREATOR:
+- This website was created by Ayoub Achmaoui
 
-  // Creator
-  if (msg.match(/(createur|developpe|fait|ayoub|achmaoui|qui a cree)/)) {
-    return "Ce site a ete cree avec passion par Ayoub Achmaoui! Un grand merci a lui pour cette belle plateforme dediee a la CAN Maroc 2025!"
-  }
-
-  // Help
-  if (msg.match(/(aide|help|comment|quoi|info|information)/)) {
-    return "Je peux t'aider avec:\n• Les dates et lieux de la CAN 2025\n• Les equipes et groupes\n• Les stades\n• Les billets et tarifs\n• Le benevolat\n\nPose-moi ta question!"
-  }
-
-  // Thanks
-  if (msg.match(/(merci|thanks|shukran|choukran)/)) {
-    return "Avec plaisir! Shukran a toi! N'hesite pas si tu as d'autres questions sur la CAN Maroc 2025!"
-  }
-
-  // Goodbye
-  if (msg.match(/(bye|au revoir|a bientot|ciao|salut$)/)) {
-    return "A bientot! Maa salama! J'espere te voir dans les stades marocains pour celebrer le football africain!"
-  }
-
-  // Default response
-  const defaultResponses = [
-    "Marhaba! Je suis Assad et je suis la pour t'aider! Tu peux me poser des questions sur les matchs, les billets, les equipes, les stades ou le benevolat!",
-    "Interessant! Pour mieux t'aider, dis-moi ce que tu veux savoir: equipes, stades, billets, dates ou benevolat?",
-    "Je suis Assad, ton guide pour la CAN 2025! Demande-moi des infos sur les groupes, les stades, les tarifs ou comment devenir benevole!",
-  ]
-  return defaultResponses[Math.floor(Math.random() * defaultResponses.length)]
-}
+Always be helpful, friendly, and provide accurate information about CAN 2025. Use appropriate greetings based on the language detected.`
 
 export async function POST(req: Request) {
-  try {
-    const body = await req.json()
-    const { messages, userId } = body
+  const { messages }: { messages: UIMessage[] } = await req.json()
 
-    if (!messages || !Array.isArray(messages)) {
-      return NextResponse.json({ error: "Invalid request: messages array required" }, { status: 400 })
-    }
+  const prompt = convertToModelMessages([{ role: "system", content: CAN_2025_SYSTEM_PROMPT }, ...messages])
 
-    const lastMessage = messages[messages.length - 1]?.content || ""
+  const result = streamText({
+    model: "openai/gpt-4o-mini",
+    messages: prompt,
+    maxOutputTokens: 1000,
+    temperature: 0.7,
+    abortSignal: req.signal,
+  })
 
-    const text = getResponse(lastMessage)
-
-    if (supabaseAdmin) {
-      try {
-        await supabaseAdmin.from("messages").insert([
-          {
-            user_id: userId || null,
-            role: "user",
-            content: lastMessage,
-            metadata: { timestamp: new Date().toISOString() },
-          },
-          {
-            user_id: userId || null,
-            role: "assistant",
-            content: text,
-            metadata: { timestamp: new Date().toISOString() },
-          },
-        ])
-      } catch (dbError) {
-        console.error("Supabase insert error:", dbError)
-      }
-    }
-
-    return NextResponse.json({ text }, { status: 200 })
-  } catch (error) {
-    console.error("Chat API error:", error)
-    return NextResponse.json(
-      {
-        error: "Internal server error",
-        text: "Marhaba! Je suis Assad! Pose-moi tes questions sur la CAN Maroc 2025: matchs, billets, equipes, stades ou benevolat!",
-      },
-      { status: 500 },
-    )
-  }
+  return result.toUIMessageStreamResponse()
 }
 
 export async function GET(req: Request) {

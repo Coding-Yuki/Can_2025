@@ -2,27 +2,28 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
+import { useChat } from "@ai-sdk/react"
+import { DefaultChatTransport } from "ai"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { X, Send, User, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-interface Message {
-  id: string
-  role: "user" | "assistant"
-  content: string
-}
+import Image from "next/image"
 
 const ASSAD_MASCOT_URL = "/images/can-mascot.png"
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
-  const [input, setInput] = useState("")
-  const [messages, setMessages] = useState<Message[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [inputValue, setInputValue] = useState("")
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  const { messages, sendMessage, status } = useChat({
+    transport: new DefaultChatTransport({ api: "/api/chat" }),
+  })
+
+  const isLoading = status === "in_progress"
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -32,57 +33,26 @@ export function ChatWidget() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim() || isLoading) return
+    if (!inputValue.trim() || isLoading) return
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input.trim(),
-    }
-
-    setMessages((prev) => [...prev, userMessage])
-    setInput("")
-    setIsLoading(true)
-
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: [...messages, userMessage].map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
-        }),
-      })
-
-      const data = await response.json()
-
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: data.text || "Desole, je n ai pas pu repondre.",
-      }
-
-      setMessages((prev) => [...prev, assistantMessage])
-    } catch (error) {
-      console.error("Chat error:", error)
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "Desole, une erreur s est produite. Veuillez reessayer.",
-      }
-      setMessages((prev) => [...prev, errorMessage])
-    } finally {
-      setIsLoading(false)
-    }
+    const messageText = inputValue.trim()
+    setInputValue("")
+    sendMessage({ text: messageText })
   }
 
   const quickQuestions = [
-    "Quelles sont les equipes qualifiees?",
-    "Comment acheter des billets?",
-    "Comment devenir benevole?",
+    { text: "مرحبا أسد! كيفاش الحال؟", label: "مرحبا! (Darija)" },
+    { text: "ما هي الفرق المتأهلة لكأس أمم إفريقيا؟", label: "الفرق المتأهلة (عربي)" },
+    { text: "Chhal taman d les billets?", label: "أسعار التذاكر (Darija)" },
+    { text: "Comment devenir benevole?", label: "التطوع (Francais)" },
   ]
+
+  const getMessageText = (message: (typeof messages)[0]) => {
+    return message.parts
+      .filter((part) => part.type === "text")
+      .map((part) => (part as { type: "text"; text: string }).text)
+      .join("")
+  }
 
   return (
     <>
@@ -95,9 +65,11 @@ export function ChatWidget() {
         )}
         aria-label="Chat avec Assad"
       >
-        <img
+        <Image
           src={ASSAD_MASCOT_URL || "/placeholder.svg"}
           alt="Assad - Mascotte CAN 2025"
+          width={80}
+          height={80}
           className="w-full h-full object-cover object-top scale-150"
         />
       </button>
@@ -114,15 +86,17 @@ export function ChatWidget() {
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-3 text-lg">
                 <div className="relative h-12 w-12 rounded-full overflow-hidden border-2 border-[#d4a300] bg-[#c8102e]">
-                  <img
+                  <Image
                     src={ASSAD_MASCOT_URL || "/placeholder.svg"}
                     alt="Assad"
+                    width={48}
+                    height={48}
                     className="w-full h-full object-cover object-top scale-150"
                   />
                 </div>
                 <div>
-                  <p className="font-bold text-[#d4a300]">Assad</p>
-                  <p className="text-xs text-white/80 font-normal">Mascotte officielle CAN 2025</p>
+                  <p className="font-bold text-[#d4a300]">Assad - اسد</p>
+                  <p className="text-xs text-white/80 font-normal">AI Assistant | مساعد ذكي</p>
                 </div>
               </CardTitle>
               <Button
@@ -141,23 +115,27 @@ export function ChatWidget() {
               {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
                   <div className="relative h-24 w-24 rounded-full overflow-hidden border-4 border-[#d4a300]/50 mb-4 bg-[#c8102e]">
-                    <img
+                    <Image
                       src={ASSAD_MASCOT_URL || "/placeholder.svg"}
                       alt="Assad"
+                      width={96}
+                      height={96}
                       className="w-full h-full object-cover object-top scale-150"
                     />
                   </div>
-                  <p className="font-bold text-foreground text-lg">Marhaba!</p>
-                  <p className="text-sm mt-1">Je suis Assad, le lion de la CAN 2025!</p>
-                  <p className="text-sm text-muted-foreground">Posez-moi vos questions sur le tournoi.</p>
+                  <p className="font-bold text-foreground text-lg">مرحبا! Marhaba!</p>
+                  <p className="text-sm mt-1">انا اسد، مساعدك الذكي لكأس افريقيا 2025</p>
+                  <p className="text-xs text-muted-foreground mt-1">Je parle Arabe, Darija, Francais et Anglais!</p>
                   <div className="mt-4 space-y-2 w-full">
                     {quickQuestions.map((question, idx) => (
                       <button
                         key={idx}
-                        onClick={() => setInput(question)}
-                        className="block w-full text-left text-xs bg-muted px-3 py-2 rounded-lg hover:bg-[#c8102e]/10 hover:text-[#c8102e] transition-colors"
+                        onClick={() => setInputValue(question.text)}
+                        className="block w-full text-right text-xs bg-muted px-3 py-2 rounded-lg hover:bg-[#c8102e]/10 hover:text-[#c8102e] transition-colors"
+                        dir="auto"
                       >
-                        {question}
+                        <span className="text-muted-foreground text-[10px] block">{question.label}</span>
+                        {question.text}
                       </button>
                     ))}
                   </div>
@@ -171,14 +149,17 @@ export function ChatWidget() {
                     >
                       {message.role === "assistant" && (
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full overflow-hidden border-2 border-[#d4a300] bg-[#c8102e]">
-                          <img
+                          <Image
                             src={ASSAD_MASCOT_URL || "/placeholder.svg"}
                             alt="Assad"
+                            width={32}
+                            height={32}
                             className="w-full h-full object-cover object-top scale-150"
                           />
                         </div>
                       )}
                       <div
+                        dir="auto"
                         className={cn(
                           "max-w-[75%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap",
                           message.role === "user"
@@ -186,7 +167,7 @@ export function ChatWidget() {
                             : "bg-muted text-foreground rounded-bl-md",
                         )}
                       >
-                        {message.content}
+                        {getMessageText(message)}
                       </div>
                       {message.role === "user" && (
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#006233] text-white">
@@ -198,9 +179,11 @@ export function ChatWidget() {
                   {isLoading && (
                     <div className="flex gap-3 justify-start">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full overflow-hidden border-2 border-[#d4a300] bg-[#c8102e]">
-                        <img
+                        <Image
                           src={ASSAD_MASCOT_URL || "/placeholder.svg"}
                           alt="Assad"
+                          width={32}
+                          height={32}
                           className="w-full h-full object-cover object-top scale-150"
                         />
                       </div>
@@ -215,16 +198,17 @@ export function ChatWidget() {
 
             <form onSubmit={handleSubmit} className="border-t p-3 flex gap-2 bg-muted/30">
               <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Demandez a Assad..."
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="اكتب رسالتك... / Ecrivez ici..."
                 disabled={isLoading}
                 className="flex-1"
+                dir="auto"
               />
               <Button
                 type="submit"
                 size="icon"
-                disabled={isLoading || !input.trim()}
+                disabled={isLoading || !inputValue.trim()}
                 className="bg-[#d4a300] hover:bg-[#d4a300]/90 text-black shrink-0"
               >
                 <Send className="h-4 w-4" />
